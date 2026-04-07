@@ -68,7 +68,7 @@ function renderBunker(bunker) {
         if (room.stateLabel.includes("Зруй") || room.stateLabel.includes("Пога")) stateColor = "#e74c3c";
 
         return `
-            <div class="room-item" style="border-left-color: ${stateColor}">
+            <div class="room-item" style="border-left-color: ${stateColor}" onclick="this.classList.toggle('is-open')">
                 <div style="display:flex; justify-content:space-between">
                     <strong>🚪 ${room.name}</strong>
                     <span style="color:${stateColor}; font-size:0.8rem">${room.stateLabel}</span>

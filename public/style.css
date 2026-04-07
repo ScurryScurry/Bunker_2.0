@@ -189,4 +189,7 @@ select.game-select {
     color: #bbb;
 }
 
-.room-item:hover .details { display: block; }
+.room-item:hover .details,
+.room-item.is-open .details { 
+    display: block; 
+}
