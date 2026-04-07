@@ -1,0 +1,192 @@
+/* public/style.css */
+body { 
+    font-family: Arial, sans-serif; 
+    background: #222; 
+    color: white; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+    margin: 0; 
+}
+.container { 
+    background: #333; 
+    padding: 20px; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+}
+input { 
+    display: block; 
+    width: 100%; 
+    margin: 10px 0; 
+    padding: 10px; 
+    border: none; 
+    border-radius: 4px; 
+    box-sizing: border-box; 
+}
+button { 
+    background: #e74c3c; 
+    color: white; 
+    border: none; 
+    padding: 10px 20px; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    width: 100%; 
+}
+button:hover { 
+    background: #c0392b; 
+}
+#message { 
+    margin-top: 15px; 
+    font-weight: bold; 
+    text-align: center; 
+}
+/* --- СТИЛІ ДЛЯ ЛОББІ --- */
+hr.divider {
+    border: 0;
+    border-top: 1px solid #555;
+    margin: 20px 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+select.game-select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: none;
+}
+
+.btn-blue {
+    background: #3498db;
+}
+
+.btn-blue:hover {
+    background: #2980b9;
+}
+
+.text-uppercase {
+    text-transform: uppercase;
+}
+
+.error-msg {
+    color: salmon;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.highlight-text {
+    color: #f1c40f;
+}
+
+.players-list {
+    text-align: left;
+    background: #222;
+    padding: 15px;
+    border-radius: 5px;
+    list-style-type: none;
+    margin-top: 10px;
+}
+
+.players-list li {
+    margin-bottom: 8px;
+}
+
+.hidden {
+    display: none;
+}
+
+/* --- СЕКЦІЯ ІГРОВОГО ПОЛЯ (GAME PAGE) --- */
+
+.game-body {
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-header {
+    flex-shrink: 0;
+    padding: 10px 20px;
+    background: #1a1a1a;
+    border-bottom: 2px solid #333;
+    display: flex;
+    justify-content: flex-start; /* Змінюємо на старт, щоб gap працював передбачувано */
+    align-items: center;
+    gap: 60px; /* ОЦЕ додасть солідну дистанцію між кодом і гравцями (можеш міняти цифру) */
+    z-index: 10;
+}
+.game-header div:first-child {
+    margin-right: auto; /* Це виштовхне все, що йде після коду, в самий правий край */
+}
+
+/* Додатково: щоб список гравців не злипався, якщо їх мало */
+.players-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-left: 20px; /* Ще трохи фокусної дистанції */
+}
+
+.game-main {
+    flex-grow: 1;
+    overflow-y: auto; /* Скрол тільки тут */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Картки та блоки даних */
+.info-block {
+    background: #1e1e1e;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #333;
+}
+
+.players-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.player-chip {
+    background: #333;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    border: 1px solid #444;
+}
+
+.player-chip.is-me {
+    border-color: #f39c12;
+    color: #f39c12;
+}
+
+/* Кімнати з ефектом розкриття */
+.room-item {
+    background: #252525;
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border-left: 4px solid #555;
+    cursor: help;
+    transition: background 0.2s;
+}
+
+.room-item:hover { background: #2d2d2d; }
+
+.room-item .details {
+    display: none;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #444;
+    font-size: 0.85rem;
+    color: #bbb;
+}
+
+.room-item:hover .details { display: block; }

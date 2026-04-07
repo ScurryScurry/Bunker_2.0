@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бункер - Лоббі</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container" id="menuScreen">
+    <h2>Вітаємо, <span id="playerName">Гравець</span>!</h2>
+    
+    <div class="form-group">
+        <h3>Створити нову гру</h3>
+        <select id="gameMode" class="game-select">
+            <option value="online">Онлайн гра (всі бачать усіх)</option>
+            <option value="live">Гра вживу (роздатчик карт)</option>
+        </select>
+        <button id="createBtn">Створити кімнату</button>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+        <h3>Приєднатися до гри</h3>
+        <input type="text" id="roomCodeInput" class="text-uppercase" placeholder="Введіть код кімнати">
+        <button id="joinBtn" class="btn-blue">Приєднатися</button>
+    </div>
+    
+    <div id="errorMessage" class="error-msg"></div>
+</div>
+
+<div class="container hidden" id="roomScreen">
+    <h2>Кімната: <span id="displayRoomCode" class="highlight-text"></span></h2>
+    <p>Режим: <span id="displayMode"></span></p>
+    
+    <h3>Гравці:</h3>
+    <ul id="playersList" class="players-list">
+        </ul>
+
+    <button id="startGameBtn" class="hidden" style="margin-top: 15px; background: #e74c3c;">Почати гру</button>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="lobby.js"></script>
+
+</body>
+</html>

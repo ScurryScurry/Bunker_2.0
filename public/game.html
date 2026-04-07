@@ -1,0 +1,29 @@
+<body class="game-body">
+
+    <header class="game-header">
+    <div class="header-left">
+        <span class="room-label">System Access Code</span>
+        <strong id="gameRoomCode">----</strong>
+    </div>
+
+    <div class="players-scroll-zone" id="playersHeaderList">
+        </div>
+
+    <div class="header-right">
+        <button class="btn-exit" onclick="confirmLeave()">EXIT</button>
+    </div>
+    <link rel="stylesheet" href="style.css">
+    </header>
+
+    <main class="game-main">
+        <div id="disasterInfo"></div>
+        
+        <div id="bunkerInfo" class="info-block">
+            <h3>🛡️ Стан об'єкта</h3>
+            <div id="bunkerContent">Завантаження...</div>
+        </div>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
