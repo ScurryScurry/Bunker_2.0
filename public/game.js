@@ -29,6 +29,9 @@ socket.on('playerLoaded', (data) => {
     renderPlayers(data.players);
     if (data.disasterData) renderDisaster(data.disasterData);
     if (data.bunkerData) renderBunker(data.bunkerData);
+    renderMyCards(data.players);
+    
+    console.log(data.players)
 });
 
 function renderPlayers(players) {
@@ -89,4 +92,52 @@ function renderBunker(bunker) {
         </div>
         <div>${rooms}</div>
     `;
+}
+
+// Додай виклик renderMyCards(data.players) всередині socket.on('playerLoaded')
+
+function renderMyCards(players) {
+    const content = document.getElementById('myCardsContent');
+    if (!content) return;
+
+    // Шукаємо СЕБЕ в списку гравців
+    const me = players.find(p => p.userId === myUserId);
+    if (!me || !me.cards) return;
+
+    // Малюємо картку професії
+    const prof = me.cards.profession;
+    
+    // Перевіряємо, чи є у картки активна дія
+    let actionButtonHtml = '';
+    if (prof.type === "ACTION") {
+        // Передаємо в функцію логіку дії (target, effect)
+        actionButtonHtml = `
+            <button 
+                class="action-btn" 
+                onclick='handleCardAction(${JSON.stringify(prof.logic)})'
+                style="margin-top: 10px; background: #3498db; border: none; padding: 8px 12px; border-radius: 4px; color: white; cursor: pointer; width: 100%; font-weight: bold;">
+                ⚡ Застосувати здібність
+            </button>
+        `;
+    }
+
+    content.innerHTML = `
+        <div class="card-item" style="background: #252525; padding: 15px; border-radius: 6px; border: 1px solid #444;">
+            <div style="color: #3498db; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px;">Професія</div>
+            <h4 style="margin: 0 0 10px 0; font-size: 1.2rem;">💼 ${prof.name}</h4>
+            <p style="margin: 0; font-size: 0.95rem; color: #ccc;">${prof.description}</p>
+            ${actionButtonHtml}
+        </div>
+        `;
+}
+
+function confirmLeave() {
+    if (confirm("Ви впевнені, що хочете покинути гру? Ваш персонаж буде видалений.")) {
+        // Відправляємо сигнал серверу про свідомий вихід
+        socket.emit('leaveGame', { roomCode, userId: myUserId });
+        
+        // Очищаємо локальні дані та йдемо в лобі
+        localStorage.removeItem('currentRoomCode');
+        window.location.href = 'lobby.html';
+    }
 }
