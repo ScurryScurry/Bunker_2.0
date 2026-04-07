@@ -1,48 +1,73 @@
 // services/playerGenerator.js
 const Utils = require('./utils');
 const Profession = require('../models/Profession');
-const GamePlayer = require('../models/GamePlayer'); // Підключаємо модель для прямого апдейту
+const Gender = require('../models/Gender');
+const BioSetting = require('../models/BioSetting');
+const GamePlayer = require('../models/GamePlayer');
 
 const PlayerGenerator = {
     generateCardsForPlayers: async (gamePlayers) => {
         try {
+            console.log("START: Початок генерації для", gamePlayers.length, "гравців");
+
             const allProfessions = await Profession.find().lean();
-            
-            if (!allProfessions || allProfessions.length === 0) {
-                console.error("🚨 В БД немає жодної професії! Генерація карток неможлива.");
+            const allGenders = await Gender.find().lean();
+            const bioConfig = await BioSetting.findOne({ _id: 'default' }).lean();
+
+            console.log(`DATA: Професій: ${allProfessions.length}, Гендерів: ${allGenders.length}, Конфіг Біо: ${bioConfig ? 'ОК' : 'НЕМАЄ'}`);
+
+            if (!allGenders.length || !bioConfig) {
+                console.error("🚨 Помилка: Гендери або Біо-налаштування не знайдені в БД!");
                 return false;
             }
 
             let availableProfessions = [...allProfessions];
 
             for (let player of gamePlayers) {
-                if (availableProfessions.length === 0) {
-                    availableProfessions = [...allProfessions];
-                }
-
+                // Вибір професії
                 const profIndex = Utils.getRandomInt(0, availableProfessions.length - 1);
                 const assignedProfession = availableProfessions.splice(profIndex, 1)[0];
 
-                // Формуємо чисті об'єкти
-                const newCards = { profession: assignedProfession };
-                const newRevealed = { profession: false };
-                
-                // 🔥 ЖОРСТКИЙ АПДЕЙТ ПРЯМО В БАЗУ ДАНИХ 🔥
-                await GamePlayer.updateOne(
-                    { _id: player._id }, // Шукаємо конкретного гравця за його унікальним ID
+                // Вибір біо
+                const randomGender = Utils.getRandomItem(allGenders);
+                const randomOrientation = Utils.getRandomItem(randomGender.orientations);
+                const randomAge = Utils.getRandomInt(bioConfig.age.min, bioConfig.age.max);
+
+                // Вибір тіла
+                const randomHeight = Utils.getRandomInt(bioConfig.height.min, bioConfig.height.max);
+                const randomWeight = Utils.getRandomInt(bioConfig.weight.min, bioConfig.weight.max);
+
+                const newCards = { 
+                    profession: assignedProfession,
+                    bio: {
+                        gender: randomGender.label,
+                        orientation: randomOrientation,
+                        age: randomAge
+                    },
+                    body: {
+                        height: randomHeight,
+                        weight: randomWeight
+                    }
+                };
+
+                console.log(`DEBUG: Картки для ${player.username}:`, JSON.stringify(newCards.bio));
+
+                // ОНОВЛЕННЯ В БАЗІ
+                const result = await GamePlayer.updateOne(
+                    { _id: player._id },
                     { 
                         $set: { 
                             cards: newCards, 
-                            revealedCards: newRevealed 
+                            revealedCards: { profession: false, bio: false, body: false } 
                         } 
                     }
                 );
                 
-                console.log(`✅ Збережено в БД: професія "${assignedProfession.name}" для ${player.username}`);
+                console.log(`✅ Результат запису для ${player.username}:`, result.modifiedCount > 0 ? "Успішно оновлено" : "Нічого не змінено");
             }
             return true;
         } catch (error) {
-            console.error("Помилка генерації:", error);
+            console.error("🔥 КРИТИЧНА ПОМИЛКА ГЕНЕРАЦІЇ:", error);
             return false;
         }
     }

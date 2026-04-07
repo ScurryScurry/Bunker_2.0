@@ -96,39 +96,62 @@ function renderBunker(bunker) {
 
 // Додай виклик renderMyCards(data.players) всередині socket.on('playerLoaded')
 
+// Функція для визначення статусу тіла
+function getBodyStatus(height, weight) {
+    const bmi = weight / ((height / 100) ** 2);
+    if (bmi < 18.5) return "Хвороблива худорлявість";
+    if (bmi < 25)   return "Ідеальна статура";
+    if (bmi < 30)   return "Легка надмірна вага";
+    if (bmi < 35)   return "Ожиріння I ступеня";
+    return "Сильне ожиріння";
+}
+
 function renderMyCards(players) {
     const content = document.getElementById('myCardsContent');
-    if (!content) return;
+    if (!content || !players) return;
 
-    // Шукаємо СЕБЕ в списку гравців
     const me = players.find(p => p.userId === myUserId);
     if (!me || !me.cards) return;
 
-    // Малюємо картку професії
-    const prof = me.cards.profession;
-    
-    // Перевіряємо, чи є у картки активна дія
-    let actionButtonHtml = '';
-    if (prof.type === "ACTION") {
-        // Передаємо в функцію логіку дії (target, effect)
-        actionButtonHtml = `
-            <button 
-                class="action-btn" 
-                onclick='handleCardAction(${JSON.stringify(prof.logic)})'
-                style="margin-top: 10px; background: #3498db; border: none; padding: 8px 12px; border-radius: 4px; color: white; cursor: pointer; width: 100%; font-weight: bold;">
-                ⚡ Застосувати здібність
-            </button>
-        `;
-    }
+    const { profession, bio, body } = me.cards;
+    const bodyStatus = getBodyStatus(body.height, body.weight);
 
     content.innerHTML = `
-        <div class="card-item" style="background: #252525; padding: 15px; border-radius: 6px; border: 1px solid #444;">
-            <div style="color: #3498db; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px;">Професія</div>
-            <h4 style="margin: 0 0 10px 0; font-size: 1.2rem;">💼 ${prof.name}</h4>
-            <p style="margin: 0; font-size: 0.95rem; color: #ccc;">${prof.description}</p>
-            ${actionButtonHtml}
+        <div class="card-item prof-border">
+            <div class="card-body-wrapper">
+                <div class="card-main-info">
+                    <div class="card-tag">Професія</div>
+                    <h4>💼 ${profession.name}</h4>
+                    <p>${profession.description}</p>
+                </div>
+                <div class="card-status-zone" id="status-prof">
+                    </div>
+            </div>
+            ${profession.type === "ACTION" ? `<button class="action-btn" onclick='handleCardAction(${JSON.stringify(profession.logic)})'>⚡ Використати</button>` : ''}
         </div>
-        `;
+
+        <div class="card-item bio-border">
+            <div class="card-body-wrapper">
+                <div class="card-main-info">
+                    <div class="card-tag">Біологічні дані</div>
+                    <h4>🧬 ${bio.gender}, ${bio.age} років</h4>
+                    <p>Орієнтація: ${bio.orientation}</p>
+                </div>
+                <div class="card-status-zone" id="status-bio"></div>
+            </div>
+        </div>
+
+        <div class="card-item body-border">
+            <div class="card-body-wrapper">
+                <div class="card-main-info">
+                    <div class="card-tag">Фізичні дані</div>
+                    <h4>⚖️ ${body.height} см / ${body.weight} кг</h4>
+                    <p>Стан: <strong>${bodyStatus}</strong></p>
+                </div>
+                <div class="card-status-zone" id="status-body"></div>
+            </div>
+        </div>
+    `;
 }
 
 function confirmLeave() {

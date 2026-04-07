@@ -193,3 +193,79 @@ select.game-select {
 .room-item.is-open .details { 
     display: block; 
 }
+
+/* Стилі для карток досьє */
+/* Основний контейнер картки */
+.card-item {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 12px 15px;
+    margin-bottom: 12px;
+    position: relative;
+}
+
+/* Обгортка для тексту та майбутнього статусу */
+.card-body-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-main-info {
+    flex: 1;
+}
+
+.card-tag {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.card-main-info h4 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: #eee;
+}
+
+.card-main-info p {
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+/* Тонкі кольорові ліворуч для ідентифікації типу карти */
+.prof-border { border-left: 4px solid #3498db; }
+.bio-border { border-left: 4px solid #9b59b6; }
+.body-border { border-left: 4px solid #2ecc71; }
+
+/* Зона для іконки ока або статусу "Відкрито" */
+.card-status-zone {
+    width: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    opacity: 0.5;
+}
+
+/* Кнопка дії (більш стримана) */
+.action-btn {
+    margin-top: 12px;
+    background: transparent;
+    border: 1px solid #3498db;
+    color: #3498db;
+    padding: 6px;
+    border-radius: 4px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: 0.3s;
+}
+
+.action-btn:hover {
+    background: #3498db;
+    color: white;
+}
