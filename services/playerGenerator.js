@@ -8,12 +8,21 @@ const GamePlayer = require('../models/GamePlayer');
 const PlayerGenerator = {
     generateCardsForPlayers: async (gamePlayers) => {
         try {
-            console.log("START: Початок генерації для", gamePlayers.length, "гравців");
+            console.log("START: Генерація з урахуванням паків");
 
-            const allProfessions = await Profession.find().lean();
-            const allGenders = await Gender.find().lean();
+            // 1. Фільтр для професій (використовує pack_id)
+            const profFilter = { pack_id: "pack_classic" };
+
+            // 2. Фільтр для гендерів (використовує req_pack та дозволяє null)
+            const genderFilter = { 
+                $or: [
+                    { req_pack: "pack_classic" },
+                    { req_pack: null } 
+                ]
+            };
+            const allProfessions = await Profession.find(profFilter).lean();
+            const allGenders = await Gender.find(genderFilter).lean();
             const bioConfig = await BioSetting.findOne({ _id: 'default' }).lean();
-
             console.log(`DATA: Професій: ${allProfessions.length}, Гендерів: ${allGenders.length}, Конфіг Біо: ${bioConfig ? 'ОК' : 'НЕМАЄ'}`);
 
             if (!allGenders.length || !bioConfig) {
