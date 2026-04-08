@@ -26,7 +26,13 @@
             <h3>🪪 Моє досьє</h3>
             <div id="myCardsContent" style="display: grid; gap: 10px;">Завантаження...</div>
         </div>
-        
+        <div id="targetModal" class="modal">
+        <div class="modal-content">
+        <h3>Виберіть ціль:</h3>
+        <div id="targetList"></div>
+        <button onclick="closeTargetModal()" class="close-btn">Скасувати</button>
+        </div>
+        </div>
     </main>
 
     <script src="/socket.io/socket.io.js"></script>

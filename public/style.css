@@ -275,3 +275,70 @@ select.game-select {
 .health-border .card-tag { color: #e74c3c; }
 .phobia-border { border-left: 4px solid #f39c12; }
 .phobia-border .card-tag { color: #f39c12; }
+.hobby-border { border-left: 4px solid #1abc9c; }
+.hobby-border .card-tag { color: #1abc9c; }
+.small-item-border { border-left: 4px solid #f1c40f; } /* Жовтий */
+.big-item-border { border-left: 4px solid #e67e22; }   /* Помаранчевий */
+
+.items-list {
+    margin-top: 5px;
+}
+
+.item-entry {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 1rem;
+    color: #eee;
+}
+.character-border { border-left: 4px solid #9b59b6; }
+.character-border .card-tag { color: #9b59b6; }
+.extra-border { border-left: 4px solid #34495e; }
+.extra-border .card-tag { color: #34495e; }
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #252525;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.target-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: 0.2s;
+}
+
+.target-btn:hover {
+    background: #3498db;
+    border-color: #3498db;
+}
+
+.close-btn {
+    margin-top: 15px;
+    background: transparent;
+    color: #888;
+    border: none;
+    cursor: pointer;
+}

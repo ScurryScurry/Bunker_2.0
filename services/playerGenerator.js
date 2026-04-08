@@ -5,6 +5,12 @@ const BioSetting = require('../models/BioSetting');
 const GamePlayer = require('../models/GamePlayer');
 const Health = require('../models/Health');
 const Phobia = require('../models/Phobia');
+const Hobby = require('../models/Hobby');
+const ItemBig = require('../models/ItemBig');
+const ItemSmall = require('../models/ItemSmall');
+const Character = require('../models/Character');
+const ExtraInfo = require('../models/ExtraInfo');
+const ExperienceConfig = require('../models/ExperienceConfig');
 
 const PlayerGenerator = {
     generateCardsForPlayers: async (gamePlayers) => {
@@ -18,7 +24,12 @@ const PlayerGenerator = {
             const allHealth = await Health.find(packFilter).lean(); // Додаємо здоров'я
             const bioConfig = await BioSetting.findOne({ _id: 'default' }).lean();
             const allPhobias = await Phobia.find(packFilter).lean();
-
+            const allHobbies = await Hobby.find(packFilter).lean();
+            const allSmallItems = await ItemSmall.find(packFilter).lean();
+            const allBigItems = await ItemBig.find(packFilter).lean();
+            const allCharacters = await Character.find(packFilter).lean();
+            const allExtra = await ExtraInfo.find(packFilter).lean();
+            
             if (!allHealth.length) {
                 console.error("🚨 Помилка: Картки здоров'я не знайдені!");
                 return false;
@@ -27,32 +38,43 @@ const PlayerGenerator = {
             let availableProfessions = [...allProfessions];
             let availableHealth = [...allHealth]; // Масив для роздачі без повторів (якщо хочеш)
             let availablePhobias = [...allPhobias];
+            let availableHobbies = [...allHobbies];
+            let availableSmall = [...allSmallItems];
+            let availableBig = [...allBigItems];
+            let availableCharacters = [...allCharacters];
+            let availableExtra = [...allExtra];
             for (let player of gamePlayers) {
-                // Вибір професії
-                const profIndex = Utils.getRandomInt(0, availableProfessions.length - 1);
-                const assignedProfession = availableProfessions.splice(profIndex, 1)[0];
-               
-                // Рандом фобії
-                const phobiaIndex = Utils.getRandomInt(0, availablePhobias.length - 1);
-                const assignedPhobia = availablePhobias.splice(phobiaIndex, 1)[0];
-                
-                // Вибір здоров'я
-                const healthIndex = Utils.getRandomInt(0, availableHealth.length - 1);
-                const assignedHealth = availableHealth.splice(healthIndex, 1)[0];
-
-                // Інші дані (Біо, Тіло)
-                const randomGender = Utils.getRandomItem(allGenders);
+                // Витягуємо рандомні елементи з видаленням (щоб не повторювались)
                 const randomAge = Utils.getRandomInt(bioConfig.age.min, bioConfig.age.max);
+                //const assignedProfession = availableProfessions.splice(Utils.getRandomInt(0, availableProfessions.length - 1), 1)[0];
+                // ТИМЧАСОВО ДЛЯ ТЕСТУ:
+                const assignedProfession = allProfessions.find(p => p._id === 'cls_traumatologist') || allProfessions[0];
+                const assignedHealth = availableHealth.splice(Utils.getRandomInt(0, availableHealth.length - 1), 1)[0];
+                const assignedPhobia = availablePhobias.splice(Utils.getRandomInt(0, availablePhobias.length - 1), 1)[0];
+                const assignedHobby = availableHobbies.splice(Utils.getRandomInt(0, availableHobbies.length - 1), 1)[0];
+                const startSmall = availableSmall.splice(Utils.getRandomInt(0, availableSmall.length - 1), 1)[0];
+                const startBig = availableBig.splice(Utils.getRandomInt(0, availableBig.length - 1), 1)[0];
+                const randomGender = Utils.getRandomItem(allGenders);
+                const assignedCharacter = availableCharacters.splice(Utils.getRandomInt(0, availableCharacters.length - 1), 1)[0];
+                const assignedExtra = availableExtra.splice(Utils.getRandomInt(0, availableExtra.length - 1), 1)[0];
+                const expConfig = await ExperienceConfig.findById('default').lean();
+                const profExp = Utils.getExperience(randomAge, expConfig);
+                const hobbyExp = Utils.getExperience(randomAge, expConfig);
 
                 const newCards = { 
-                    profession: assignedProfession,
-                    health: assignedHealth, // Додаємо в об'єкт
+                    profession: { ...assignedProfession, experience: profExp },
+                    health: assignedHealth,
                     phobia: assignedPhobia,
+                    hobby: { ...assignedHobby, experience: hobbyExp },
                     bio: {
                         gender: randomGender.label,
                         orientation: Utils.getRandomItem(randomGender.orientations),
                         age: randomAge
                     },
+                    inventorySmall: [startSmall], // Зберігаємо як МАСИВ
+                    inventoryBig: [startBig],
+                    character: assignedCharacter,
+                    extraInfo: assignedExtra,
                     body: { height: Utils.getRandomInt(150, 210), weight: Utils.getRandomInt(50, 120) }
                 };
 
@@ -61,7 +83,18 @@ const PlayerGenerator = {
                     { 
                         $set: { 
                             cards: newCards, 
-                            revealedCards: { profession: false, bio: false, body: false, health: false, phobia: false } 
+                            revealedCards: { 
+                                profession: false, 
+                                health: false, 
+                                phobia: false, 
+                                hobby: false, // Нове поле для статусу відкриття
+                                bio: false, 
+                                body: false,
+                                character: false,
+                                extraInfo: false,
+                                inventorySmall: false, 
+                                inventoryBig: false
+                            } 
                         } 
                     }
                 );
