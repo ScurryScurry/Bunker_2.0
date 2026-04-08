@@ -269,3 +269,9 @@ select.game-select {
     background: #3498db;
     color: white;
 }
+
+/* Новий колір для здоров'я */
+.health-border { border-left: 4px solid #e74c3c; }
+.health-border .card-tag { color: #e74c3c; }
+.phobia-border { border-left: 4px solid #f39c12; }
+.phobia-border .card-tag { color: #f39c12; }

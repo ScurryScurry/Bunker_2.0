@@ -106,6 +106,8 @@ function getBodyStatus(height, weight) {
     return "Сильне ожиріння";
 }
 
+// public/game.js
+
 function renderMyCards(players) {
     const content = document.getElementById('myCardsContent');
     if (!content || !players) return;
@@ -113,7 +115,7 @@ function renderMyCards(players) {
     const me = players.find(p => p.userId === myUserId);
     if (!me || !me.cards) return;
 
-    const { profession, bio, body } = me.cards;
+    const { profession, bio, phobia, body, health } = me.cards;
     const bodyStatus = getBodyStatus(body.height, body.weight);
 
     content.innerHTML = `
@@ -124,10 +126,19 @@ function renderMyCards(players) {
                     <h4>💼 ${profession.name}</h4>
                     <p>${profession.description}</p>
                 </div>
-                <div class="card-status-zone" id="status-prof">
-                    </div>
+                <div class="card-status-zone" id="status-prof"></div>
             </div>
-            ${profession.type === "ACTION" ? `<button class="action-btn" onclick='handleCardAction(${JSON.stringify(profession.logic)})'>⚡ Використати</button>` : ''}
+        </div>
+
+        <div class="card-item health-border">
+            <div class="card-body-wrapper">
+                <div class="card-main-info">
+                    <div class="card-tag">Стан здоров'я</div>
+                    <h4>❤️ ${health.name}</h4>
+                    <p>${health.description} <i>(Рівень загрози: ${health.danger_level})</i></p>
+                </div>
+                <div class="card-status-zone" id="status-health"></div>
+            </div>
         </div>
 
         <div class="card-item bio-border">
@@ -146,10 +157,21 @@ function renderMyCards(players) {
                 <div class="card-main-info">
                     <div class="card-tag">Фізичні дані</div>
                     <h4>⚖️ ${body.height} см / ${body.weight} кг</h4>
-                    <p>Стан: <strong>${bodyStatus}</strong></p>
+                    <p>Статус: <strong>${bodyStatus}</strong></p>
                 </div>
                 <div class="card-status-zone" id="status-body"></div>
             </div>
+        </div>
+
+        <div class="card-item phobia-border">
+        <div class="card-body-wrapper">
+            <div class="card-main-info">
+                <div class="card-tag">Фобія</div>
+                <h4 style="font-size: 1.2rem;">😱 ${phobia.name}</h4>
+                <p style="font-style: italic; font-size: 0.8rem; opacity: 0.7;">Психологічний бар'єр персонажа</p>
+            </div>
+            <div class="card-status-zone"></div>
+        </div>
         </div>
     `;
 }
