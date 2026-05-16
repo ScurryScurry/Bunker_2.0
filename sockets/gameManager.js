@@ -2,7 +2,7 @@
 const Room = require('../models/Room');
 const RoomService = require('../services/roomService');
 const GamePlayer = require('../models/GamePlayer');
-
+const actionManager = require('../services/ActionManager');
 module.exports = (io, socket) => {
   socket.on('playerReadyInGame', async (data) => {
     try {
@@ -59,4 +59,7 @@ socket.on('leaveGame', async (data) => {
     });
   // Тут в майбутньому буде твій EventManager для активок:
   // socket.on('useCardAction', async (data) => { ... });
+socket.on('useProfessionAction', async (data) => {
+    await actionManager.execute(data);
+});
 };

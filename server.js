@@ -10,7 +10,7 @@ const { Server } = require('socket.io');
 // Підключаємо наш новий модуль для сокетів
 const roomManager = require('./sockets/roomManager');
 const gameManager = require('./sockets/gameManager');
-
+const gameHandler = require('./services/gameHandler');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -31,6 +31,7 @@ io.on('connection', (socket) => {
     // Тепер roomManager відповідає за лоббі, а gameManager за саму гру
     roomManager(io, socket);
     gameManager(io, socket);
+    gameHandler(io, socket);
 
     socket.on('disconnect', () => {
         console.log(`❌ Відключено: ${socket.id}`);

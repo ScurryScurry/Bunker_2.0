@@ -11,8 +11,6 @@ const {
     GamePlayer 
 } = require('../models');
 
-// services/actionManager.js
-const { GamePlayer } = require('../models');
 
 const ActionManager = {
     execute: async (roomId, actorId, targetId, logic) => {

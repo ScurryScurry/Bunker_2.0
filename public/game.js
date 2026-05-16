@@ -100,31 +100,30 @@ let currentActionLogic = null; // Запам'ятовуємо логіку, по
 function handleProfessionAction(logic) {
     if (logic.target === "SELECT") {
         currentActionLogic = logic;
-        openTargetModal();
+        openTargetModal(logic);
     }
 }
 
-function openTargetModal() {
+function openTargetModal(logic) {
     const modal = document.getElementById('targetModal');
     const list = document.getElementById('targetList');
     list.innerHTML = '';
 
-    // Беремо всіх гравців, крім себе (бо навряд чи ти хочеш лікувати самого себе)
-    const opponents = playersInRoom.filter(p => p.userId !== myUserId);
 
-    opponents.forEach(player => {
+    playersInRoom.forEach(player => {
         const btn = document.createElement('button');
         btn.className = 'target-btn';
         btn.innerText = player.username;
-        btn.onclick = () => selectTarget(player._id);
+        btn.onclick = () => selectTarget(player._id, logic);
         list.appendChild(btn);
     });
 
     modal.style.display = 'flex';
 }
 
-function selectTarget(targetId) {
-    socket.emit('useProfessionAction', { targetId });
+function selectTarget(targetId, logic) {
+    console.log("🎯 Вибрано ціль з ID:", targetId); // ПЕРЕВІРКА 1
+    socket.emit('useProfessionAction', { targetId, logic });
     closeTargetModal();
 }
 

@@ -49,7 +49,9 @@ const PlayerGenerator = {
                 //const assignedProfession = availableProfessions.splice(Utils.getRandomInt(0, availableProfessions.length - 1), 1)[0];
                 // ТИМЧАСОВО ДЛЯ ТЕСТУ:
                 const assignedProfession = allProfessions.find(p => p._id === 'cls_traumatologist') || allProfessions[0];
-                const assignedHealth = availableHealth.splice(Utils.getRandomInt(0, availableHealth.length - 1), 1)[0];
+                //const assignedHealth = availableHealth.splice(Utils.getRandomInt(0, availableHealth.length - 1), 1)[0];
+                // Тимчасово для теста
+                const assignedHealth = allHealth.find(h => h.id === 'cls_fracture') || allHealth[4];
                 const assignedPhobia = availablePhobias.splice(Utils.getRandomInt(0, availablePhobias.length - 1), 1)[0];
                 const assignedHobby = availableHobbies.splice(Utils.getRandomInt(0, availableHobbies.length - 1), 1)[0];
                 const startSmall = availableSmall.splice(Utils.getRandomInt(0, availableSmall.length - 1), 1)[0];
