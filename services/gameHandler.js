@@ -40,7 +40,6 @@ module.exports = (io, socket) => {
         }
 
         const result = await ActionManager.execute(
-            player.roomCode,
             actorId,
             targetId,
             player.cards.profession.logic
@@ -85,7 +84,6 @@ socket.on('useActiveCard', async ({ cardId, targetId }) => {
         }
 
         const result = await ActionManager.execute(
-            player.roomCode,
             player._id,
             targetId,
             card.logic

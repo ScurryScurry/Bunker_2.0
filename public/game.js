@@ -154,16 +154,23 @@ function closeTargetModal() {
 // 🃏 Функції для активних карт
 let currentActiveCardId = null;
 
-function useActiveCard(cardId, logic) {
+// Функція, що зберігає об'єкт картки для використання в onClick
+function prepareActiveCardUse(cardJson) {
+    const card = JSON.parse(cardJson);
+    useActiveCard(card, card.logic);
+}
+
+function useActiveCard(card, logic) {
+    console.log("🎯 Active Card Clicked:", card);
+    
     if (logic.target === "SELF") {
         const me = playersInRoom.find(p => p.userId === myUserId);
-        if (me && me._id) {
-            socket.emit('useActiveCard', { cardId, targetId: me._id });
-        } else {
-            showToast('❌ Не вдалося визначити власний ID', 'error');
-        }
+        const myPlayerId = me ? me._id : null;
+
+        console.log("Emitting SELF action with targetId:", myPlayerId);
+        socket.emit('useActiveCard', { cardId: card._id, targetId: myPlayerId });
     } else if (logic.target === "SELECT") {
-        currentActiveCardId = cardId;
+        currentActiveCardId = card._id;
         openTargetModalForActiveCard(logic);
     }
 }
@@ -178,6 +185,7 @@ function openTargetModalForActiveCard(logic) {
         btn.className = 'target-btn';
         btn.innerText = player.username;
         btn.onclick = () => {
+            console.log("📤 Emitting useActiveCard:", { cardId: currentActiveCardId, targetId: player._id });
             socket.emit('useActiveCard', { cardId: currentActiveCardId, targetId: player._id });
             closeTargetModal();
         };
@@ -347,7 +355,7 @@ function renderMyCards(players) {
                         <div style="border:1px solid #e67e22; border-radius:6px; padding:10px; margin-top:8px;">
                             <strong>🔥 ${card.name}</strong>
                             <p style="font-size:0.8rem; opacity:0.8;">${card.description || ''}</p>
-                            <button class="action-btn" onclick='useActiveCard("${card._id}", ${JSON.stringify(card.logic).replace(/"/g, "'")})'>
+                            <button class="action-btn" onclick='prepareActiveCardUse(${JSON.stringify(JSON.stringify(card))})'>
                                 ⚡ Використати
                             </button>
                         </div>

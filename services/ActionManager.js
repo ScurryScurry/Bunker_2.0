@@ -15,25 +15,30 @@ const {
 
 
 const ActionManager = {
-    execute: async (roomId, actorId, targetId, logic) => {
+    execute: async (executorId, targetId, logic) => {
         try {
-            // logic.effect або logic.action — залежно від того, що прийшло
             const actionType = logic.effect || logic.action;
 
             switch (actionType) {
                 case 'DESTROY': 
                     return await ActionManager.handleDestroy(targetId, logic);
                 
-                case 'TRANSFER':
-                    return await ActionManager.handleTransfer(actorId, targetId, logic);
+                case 'SWAP':
+                    return await ActionManager.handleSwap(executorId, targetId, logic);
+                
+                case 'STEAL':
+                    return await ActionManager.handleSteal(executorId, targetId, logic);
+                
+                case 'GIVE':
+                    return await ActionManager.handleGive(executorId, targetId, logic);
 
-                case 'SET': // Пряме встановлення значення (наприклад, змінити вік)
+                case 'SET':
                     return await ActionManager.handleSet(targetId, logic);
 
-                case 'REVEAL': // Примусове відкриття карти іншого гравця
+                case 'REVEAL':
                     return await ActionManager.handleReveal(targetId, logic);
 
-                case 'ADD': // Додавання предмета в багаж
+                case 'ADD':
                     return await ActionManager.handleAdd(targetId, logic);
 
                 default:
@@ -45,60 +50,65 @@ const ActionManager = {
         }
     },
 
-    // 🛠 ВИДАЛЕННЯ / ЛІКУВАННЯ (Приклад: Травматолог)
-    handleDestroy: async (targetId, logic) => {
-        const field = logic.attribute || logic.field; // health, phobia...
-        const target = await GamePlayer.findById(targetId).lean();
-        if (!target) return { success: false, message: "Ціль не знайдена" };
+    handleSwap: async (executorId, targetId, logic) => {
+        const field = logic.attribute || logic.field;
+        const executor = await GamePlayer.findById(executorId);
+        const target = await GamePlayer.findById(targetId);
 
-        const currentCard = target.cards[field];
+        if (!executor || !target) return { success: false, message: "Гравець не знайдений" };
 
-        // Якщо є фільтр, перевіряємо чи підходить карта
-        if (logic.filter && currentCard) {
-            const match = Object.entries(logic.filter).every(([key, value]) => currentCard[key] === value);
-            if (!match) return { success: false, message: "Ця дія не діє на даний тип карти" };
-        }
+        const executorVal = executor.cards[field];
+        const targetVal = target.cards[field];
 
-        // Замість створення картки "Здоровий", просто зануляємо
-        await GamePlayer.updateOne(
-            { _id: targetId },
-            { $set: { [`cards.${field}`]: null } }
-        );
+        executor.cards[field] = targetVal;
+        target.cards[field] = executorVal;
 
-        return { success: true, message: `Картку ${field} успішно видалено (скинуто до дефолту)` };
+        await executor.save();
+        await target.save();
+
+        return { success: true, executor, target };
     },
 
-    // 🛠 ОБМІН / ПЕРЕДАЧА (Приклад: Обмін тілами)
-    handleTransfer: async (actorId, targetId, logic) => {
-        const field = logic.field || logic.attribute;
-        const actor = await GamePlayer.findById(actorId).lean();
-        const target = await GamePlayer.findById(targetId).lean();
+    handleSteal: async (executorId, targetId, logic) => {
+        const field = logic.attribute || logic.field;
+        const executor = await GamePlayer.findById(executorId);
+        const target = await GamePlayer.findById(targetId);
 
-        if (!actor) return { success: false, message: "Актор не знайдений" };
-        if (!target) return { success: false, message: "Ціль не знайдена" };
+        if (!executor || !target) return { success: false, message: "Гравець не знайдений" };
 
-        if (logic.mode === 'SWAP') {
-            const actorVal = actor.cards[field];
-            const targetVal = target.cards[field];
+        executor.cards[field] = target.cards[field];
+        target.cards[field] = Array.isArray(target.cards[field]) ? [] : null;
 
-            await GamePlayer.bulkWrite([
-                {
-                    updateOne: {
-                        filter: { _id: actorId },
-                        update: { $set: { [`cards.${field}`]: targetVal } }
-                    }
-                },
-                {
-                    updateOne: {
-                        filter: { _id: targetId },
-                        update: { $set: { [`cards.${field}`]: actorVal } }
-                    }
-                }
-            ]);
-            
-            return { success: true, message: "Обмін проведено успішно" };
-        }
-        return { success: false, message: "Mode не підтримується" };
+        await executor.save();
+        await target.save();
+
+        return { success: true, executor, target };
+    },
+
+    handleGive: async (executorId, targetId, logic) => {
+        const field = logic.attribute || logic.field;
+        const executor = await GamePlayer.findById(executorId);
+        const target = await GamePlayer.findById(targetId);
+
+        if (!executor || !target) return { success: false, message: "Гравець не знайдений" };
+
+        target.cards[field] = executor.cards[field];
+        executor.cards[field] = Array.isArray(executor.cards[field]) ? [] : null;
+
+        await executor.save();
+        await target.save();
+
+        return { success: true, executor, target };
+    },
+
+    async handleDestroy(targetId, logic) {
+        const targetField = logic.attribute || logic.field;
+        const updatedTarget = await GamePlayer.findByIdAndUpdate(
+            targetId, 
+            { $set: { [`cards.${targetField}`]: null } }, 
+            { new: true }
+        );
+        return { success: true, target: updatedTarget };
     },
 
     // 🛠 ВСТАНОВЛЕННЯ (Приклад: Карта "Омолодження")
