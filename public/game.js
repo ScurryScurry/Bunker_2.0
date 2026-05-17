@@ -104,56 +104,62 @@ function renderBunker(bunker) {
 }
 // public/game.js
 
-let currentActionLogic = null; // Запам'ятовуємо логіку, поки вибираємо ціль
+let modalContext = null; // Запам'ятовуємо контекст: що саме ми робимо (професія чи активна карта)
 
 function handleProfessionAction(logic) {
     if (logic.target === "SELECT") {
-        currentActionLogic = logic;
-        openTargetModal(logic);
+        modalContext = { type: 'profession', logic };
+        openTargetModal();
     } else if (logic.target === "SELF") {
-        // SELF-таргет — застосовуємо навичку на себе без модалки
         const me = playersInRoom.find(p => p.userId === myUserId);
         if (me && me._id) {
             console.log("🎯 SELF-target, свій _id:", me._id);
-            socket.emit('useProfessionAction', { targetId: me._id });
+            socket.emit('useProfessionAction', { targetId: me._id, logic });
         } else {
             showToast('❌ Не вдалося визначити власний ID', 'error');
         }
     }
 }
 
-function openTargetModal(logic) {
+function openTargetModal() {
     const modal = document.getElementById('targetModal');
     const list = document.getElementById('targetList');
+    if (!modal || !list) return;
+    
     list.innerHTML = '';
-
 
     playersInRoom.forEach(player => {
         const btn = document.createElement('button');
         btn.className = 'target-btn';
         btn.innerText = player.username;
-        btn.onclick = () => selectTarget(player._id, logic);
+        btn.onclick = () => selectTarget(player._id);
         list.appendChild(btn);
     });
 
     modal.style.display = 'flex';
 }
 
-function selectTarget(targetId, logic) {
-    console.log("🎯 Вибрано ціль з ID:", targetId); // ПЕРЕВІРКА 1
-    socket.emit('useProfessionAction', { targetId, logic });
+function selectTarget(targetId) {
+    if (!modalContext) return;
+
+    if (modalContext.type === 'profession') {
+        console.log("🎯 Вибрано ціль для професії:", targetId);
+        socket.emit('useProfessionAction', { targetId, logic: modalContext.logic });
+    } else if (modalContext.type === 'activeCard') {
+        console.log("📤 Вибрано ціль для активної карти:", targetId);
+        socket.emit('useActiveCard', { cardId: modalContext.cardId, targetId });
+    }
+
     closeTargetModal();
 }
 
 function closeTargetModal() {
-    document.getElementById('targetModal').style.display = 'none';
-    currentActionLogic = null;
-    currentActiveCardId = null;
+    const modal = document.getElementById('targetModal');
+    if (modal) modal.style.display = 'none';
+    modalContext = null;
 }
 
 // 🃏 Функції для активних карт
-let currentActiveCardId = null;
-
 // Функція, що зберігає об'єкт картки для використання в onClick
 function prepareActiveCardUse(cardJson) {
     const card = JSON.parse(cardJson);
@@ -170,29 +176,9 @@ function useActiveCard(card, logic) {
         console.log("Emitting SELF action with targetId:", myPlayerId);
         socket.emit('useActiveCard', { cardId: card._id, targetId: myPlayerId });
     } else if (logic.target === "SELECT") {
-        currentActiveCardId = card._id;
-        openTargetModalForActiveCard(logic);
+        modalContext = { type: 'activeCard', cardId: card._id, logic };
+        openTargetModal();
     }
-}
-
-function openTargetModalForActiveCard(logic) {
-    const modal = document.getElementById('targetModal');
-    const list = document.getElementById('targetList');
-    list.innerHTML = '';
-
-    playersInRoom.forEach(player => {
-        const btn = document.createElement('button');
-        btn.className = 'target-btn';
-        btn.innerText = player.username;
-        btn.onclick = () => {
-            console.log("📤 Emitting useActiveCard:", { cardId: currentActiveCardId, targetId: player._id });
-            socket.emit('useActiveCard', { cardId: currentActiveCardId, targetId: player._id });
-            closeTargetModal();
-        };
-        list.appendChild(btn);
-    });
-
-    modal.style.display = 'flex';
 }
 
 
