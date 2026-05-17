@@ -21,8 +21,17 @@ socket.emit('playerReadyInGame', {
 
 // 3. Слухаємо події
 socket.on('error', (msg) => {
-    alert(msg);
-    window.location.href = 'lobby.html';
+    showToast(msg, 'error');
+});
+
+socket.on('gameStateUpdated', (data) => {
+    // Оновлюємо глобальний масив гравців
+    playersInRoom = data.players;
+    // Перемальовуємо список гравців і свої картки
+    renderPlayers(data.players);
+    renderMyCards(data.players);
+    // Показуємо сповіщення про успішну дію
+    if (data.log) showToast(data.log, 'success');
 });
 socket.on('playerLoaded', (data) => {
     document.getElementById('gameRoomCode').innerText = roomCode;
@@ -101,6 +110,15 @@ function handleProfessionAction(logic) {
     if (logic.target === "SELECT") {
         currentActionLogic = logic;
         openTargetModal(logic);
+    } else if (logic.target === "SELF") {
+        // SELF-таргет — застосовуємо навичку на себе без модалки
+        const me = playersInRoom.find(p => p.userId === myUserId);
+        if (me && me._id) {
+            console.log("🎯 SELF-target, свій _id:", me._id);
+            socket.emit('useProfessionAction', { targetId: me._id });
+        } else {
+            showToast('❌ Не вдалося визначити власний ID', 'error');
+        }
     }
 }
 
@@ -130,8 +148,44 @@ function selectTarget(targetId, logic) {
 function closeTargetModal() {
     document.getElementById('targetModal').style.display = 'none';
     currentActionLogic = null;
+    currentActiveCardId = null;
 }
 
+// 🃏 Функції для активних карт
+let currentActiveCardId = null;
+
+function useActiveCard(cardId, logic) {
+    if (logic.target === "SELF") {
+        const me = playersInRoom.find(p => p.userId === myUserId);
+        if (me && me._id) {
+            socket.emit('useActiveCard', { cardId, targetId: me._id });
+        } else {
+            showToast('❌ Не вдалося визначити власний ID', 'error');
+        }
+    } else if (logic.target === "SELECT") {
+        currentActiveCardId = cardId;
+        openTargetModalForActiveCard(logic);
+    }
+}
+
+function openTargetModalForActiveCard(logic) {
+    const modal = document.getElementById('targetModal');
+    const list = document.getElementById('targetList');
+    list.innerHTML = '';
+
+    playersInRoom.forEach(player => {
+        const btn = document.createElement('button');
+        btn.className = 'target-btn';
+        btn.innerText = player.username;
+        btn.onclick = () => {
+            socket.emit('useActiveCard', { cardId: currentActiveCardId, targetId: player._id });
+            closeTargetModal();
+        };
+        list.appendChild(btn);
+    });
+
+    modal.style.display = 'flex';
+}
 
 
 // Функція для визначення статусу тіла
@@ -178,8 +232,9 @@ function renderMyCards(players) {
                 <div class="card-status-zone" id="status-prof"></div>
             </div>
             ${profession?.logic ? `
-                <button class="action-btn" onclick='handleProfessionAction(${JSON.stringify(profession.logic)})'>
-                    ⚡ Використати навичку
+                <button class="action-btn" onclick='handleProfessionAction(${JSON.stringify(profession.logic)})'
+                    ${profession?.isUsed ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
+                    ${profession?.isUsed ? '✅ Використано' : '⚡ Використати навичку'}
                 </button>
             ` : ''}
         </div>
@@ -283,6 +338,23 @@ function renderMyCards(players) {
                 ` : `<h4>⚖️ Невідомо</h4>`}
             </div>
         </div>
+
+        <div class="card-item" style="border-top: 4px solid #e67e22;">
+            <div class="card-main-info">
+                <div class="card-tag">Активні карти (${me.cards.Active_cards?.length || 0})</div>
+                ${me.cards.Active_cards && me.cards.Active_cards.length > 0
+                    ? me.cards.Active_cards.map(card => `
+                        <div style="border:1px solid #e67e22; border-radius:6px; padding:10px; margin-top:8px;">
+                            <strong>🔥 ${card.name}</strong>
+                            <p style="font-size:0.8rem; opacity:0.8;">${card.description || ''}</p>
+                            <button class="action-btn" onclick='useActiveCard("${card._id}", ${JSON.stringify(card.logic).replace(/"/g, "'")})'>
+                                ⚡ Використати
+                            </button>
+                        </div>
+                    `).join('')
+                    : `<p style="color: #666;">Немає активних карт</p>`}
+            </div>
+        </div>
     `;
 }
 
@@ -295,4 +367,24 @@ function confirmLeave() {
         localStorage.removeItem('currentRoomCode');
         window.location.href = 'lobby.html';
     }
+}
+
+// 4. 🍞 Система сповіщень (toast)
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+
+    const icons = { error: '❌', success: '✅', info: 'ℹ️' };
+    toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span>${message}</span>`;
+
+    container.appendChild(toast);
+
+    // Автоматичне зникнення через 4 секунди
+    setTimeout(() => {
+        toast.classList.add('toast-fade-out');
+        setTimeout(() => toast.remove(), 400);
+    }, 4000);
 }

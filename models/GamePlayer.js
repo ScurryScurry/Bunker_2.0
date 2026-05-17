@@ -6,6 +6,7 @@ const gamePlayerSchema = new mongoose.Schema({
     userId: { type: String, required: true },
     username: String,
     isHost: { type: Boolean, default: false },
+    socketId: { type: String }, // для ідентифікації гравця по socket.id
     cards: { type: Object, default: {} },
     revealedCards: { type: Object, default: {} }
 });

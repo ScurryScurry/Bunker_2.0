@@ -11,6 +11,7 @@ const ItemSmall = require('../models/ItemSmall');
 const Character = require('../models/Character');
 const ExtraInfo = require('../models/ExtraInfo');
 const ExperienceConfig = require('../models/ExperienceConfig');
+const ActiveCards = require('../models/ActiveCards');
 
 const PlayerGenerator = {
     generateCardsForPlayers: async (gamePlayers) => {
@@ -30,6 +31,9 @@ const PlayerGenerator = {
             const allCharacters = await Character.find(packFilter).lean();
             const allExtra = await ExtraInfo.find(packFilter).lean();
             
+            // Active Cards для всіх гравців (один запит на всіх)
+            const allActiveCards = await ActiveCards.find(packFilter).lean();
+            
             if (!allHealth.length) {
                 console.error("🚨 Помилка: Картки здоров'я не знайдені!");
                 return false;
@@ -48,10 +52,10 @@ const PlayerGenerator = {
                 const randomAge = Utils.getRandomInt(bioConfig.age.min, bioConfig.age.max);
                 //const assignedProfession = availableProfessions.splice(Utils.getRandomInt(0, availableProfessions.length - 1), 1)[0];
                 // ТИМЧАСОВО ДЛЯ ТЕСТУ:
-                const assignedProfession = allProfessions.find(p => p._id === 'cls_traumatologist') || allProfessions[0];
+                const assignedProfession = allProfessions.find(p => p._id === 'cls_machinist') || allProfessions[0];
                 //const assignedHealth = availableHealth.splice(Utils.getRandomInt(0, availableHealth.length - 1), 1)[0];
                 // Тимчасово для теста
-                const assignedHealth = allHealth.find(h => h.id === 'cls_fracture') || allHealth[4];
+                const assignedHealth = allHealth.find(h => h.id === 'cls_fracture') || allHealth[2];
                 const assignedPhobia = availablePhobias.splice(Utils.getRandomInt(0, availablePhobias.length - 1), 1)[0];
                 const assignedHobby = availableHobbies.splice(Utils.getRandomInt(0, availableHobbies.length - 1), 1)[0];
                 const startSmall = availableSmall.splice(Utils.getRandomInt(0, availableSmall.length - 1), 1)[0];
@@ -63,7 +67,15 @@ const PlayerGenerator = {
                 const profExp = Utils.getExperience(randomAge, expConfig);
                 const hobbyExp = Utils.getExperience(randomAge, expConfig);
 
-                const newCards = { 
+                // 2 випадкові Active Cards для кожного гравця (без повторів)
+                const assignedActiveCards = [];
+                const availableCards = [...allActiveCards];
+                for (let i = 0; i < 2 && availableCards.length > 0; i++) {
+                    const idx = Utils.getRandomInt(0, availableCards.length - 1);
+                    assignedActiveCards.push(availableCards.splice(idx, 1)[0]);
+                }
+
+                const newCards = {
                     profession: { ...assignedProfession, experience: profExp },
                     health: assignedHealth,
                     phobia: assignedPhobia,
@@ -77,7 +89,8 @@ const PlayerGenerator = {
                     inventoryBig: [startBig],
                     character: assignedCharacter,
                     extraInfo: assignedExtra,
-                    body: { height: Utils.getRandomInt(150, 210), weight: Utils.getRandomInt(50, 120) }
+                    body: { height: Utils.getRandomInt(150, 210), weight: Utils.getRandomInt(50, 120) },
+                    Active_cards: assignedActiveCards
                 };
 
                 await GamePlayer.updateOne(

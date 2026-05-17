@@ -34,21 +34,80 @@ module.exports = (io, socket) => {
             return socket.emit('error', 'Ваша професія не має активних дій');
         }
 
-        const result = await ActionManager.executeProfessionAction(
-            actorId, 
-            targetId, 
+        // Перевіряємо чи дія вже використана (захист від повторного використання)
+        if (player.cards?.profession?.isUsed) {
+            return socket.emit('error', 'Ця дія вже була використана');
+        }
+
+        const result = await ActionManager.execute(
+            player.roomCode,
+            actorId,
+            targetId,
             player.cards.profession.logic
         );
 
         if (result.success) {
+            // Позначаємо дію як використану — одноразове використання
+            await GamePlayer.updateOne(
+                { _id: actorId },
+                { $set: { 'cards.profession.isUsed': true } }
+            );
+
             const updatedPlayers = await GamePlayer.find({ roomCode: player.roomCode });
-            io.to(player.roomCode).emit('gameStateUpdated', { 
+            io.to(player.roomCode).emit('gameStateUpdated', {
                 players: updatedPlayers,
-                log: `${player.username} використав навичку!` 
+                log: `${player.username} використав навичку!`
             });
+        } else {
+            socket.emit('error', result.message || 'Дія не вдалася');
         }
     } catch (err) {
         console.error("🔥 Помилка обробки дії:", err);
+    }
+});
+
+// 🃏 Активні карти (одноразові картки з логікою, що зберігаються в Active_cards)
+socket.on('useActiveCard', async ({ cardId, targetId }) => {
+    console.log("📩 Використання активної карти:", { cardId, targetId });
+
+    try {
+        const player = await GamePlayer.findOne({ socketId: socket.id });
+        if (!player) {
+            return socket.emit('error', 'Вас не ідентифіковано');
+        }
+
+        // Знаходимо карту в масиві Active_cards за _id
+        const card = player.cards.Active_cards?.find(
+            c => c._id.toString() === cardId
+        );
+        if (!card) {
+            return socket.emit('error', 'Активну карту не знайдено');
+        }
+
+        const result = await ActionManager.execute(
+            player.roomCode,
+            player._id,
+            targetId,
+            card.logic
+        );
+
+        if (result.success) {
+            // Видаляємо використану карту з масиву ($pull за _id)
+            await GamePlayer.updateOne(
+                { _id: player._id },
+                { $pull: { 'cards.Active_cards': { _id: card._id } } }
+            );
+
+            const updatedPlayers = await GamePlayer.find({ roomCode: player.roomCode });
+            io.to(player.roomCode).emit('gameStateUpdated', {
+                players: updatedPlayers,
+                log: `${player.username} використав активну карту: ${card.name}`
+            });
+        } else {
+            socket.emit('error', result.message || 'Дія не вдалася');
+        }
+    } catch (err) {
+        console.error("🔥 Помилка активної карти:", err);
     }
 });
 };

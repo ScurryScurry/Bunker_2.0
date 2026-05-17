@@ -17,7 +17,10 @@ module.exports = (io, socket) => {
       if (!player) {
           return socket.emit('error', '❌ Вас не знайдено у списку гравців цієї кімнати');
       }
-      
+
+      // Зберігаємо socket.id на гравцеві для ідентифікації при використанні навичок
+      await GamePlayer.updateOne({ _id: player._id }, { $set: { socketId: socket.id } });
+
       socket.join(roomCode);
       socket.currentRoom = roomCode;
       socket.myUserId = userId;
@@ -57,9 +60,4 @@ socket.on('leaveGame', async (data) => {
         console.error('Помилка при leaveGame:', err);
     }
     });
-  // Тут в майбутньому буде твій EventManager для активок:
-  // socket.on('useCardAction', async (data) => { ... });
-socket.on('useProfessionAction', async (data) => {
-    await actionManager.execute(data);
-});
 };
