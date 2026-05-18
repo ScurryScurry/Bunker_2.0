@@ -51,54 +51,101 @@ const ActionManager = {
     },
 
     handleSwap: async (executorId, targetId, logic) => {
-        const field = logic.attribute || logic.field;
-        const executor = await GamePlayer.findById(executorId);
-        const target = await GamePlayer.findById(targetId);
+        try {
+            const field = logic.attribute || logic.field;
+            if (!field) return { success: false, message: "Не вказано поле для обміну" };
 
-        if (!executor || !target) return { success: false, message: "Гравець не знайдений" };
+            console.log(`🔄 Attempting SWAP: field=${field}, executor=${executorId}, target=${targetId}`);
 
-        const executorVal = executor.cards[field];
-        const targetVal = target.cards[field];
+            const executor = await GamePlayer.findById(executorId).lean();
+            const target = await GamePlayer.findById(targetId).lean();
 
-        executor.cards[field] = targetVal;
-        target.cards[field] = executorVal;
+            if (!executor || !target) {
+                console.error("❌ SWAP failed: executor or target not found");
+                return { success: false, message: "Гравця не знайдено в базі даних" };
+            }
 
-        await executor.save();
-        await target.save();
+            const executorVal = executor.cards?.[field];
+            const targetVal = target.cards?.[field];
 
-        return { success: true, executor, target };
+            if (executorVal === undefined || targetVal === undefined) {
+                console.warn(`⚠️ SWAP warning: attribute '${field}' missing in one of the players`);
+            }
+
+            // Атомарні оновлення через $set. Використовуємо lean() для читання та updateOne для запису.
+            // Це гарантує, що Mongoose побачить зміни в Mixed-типі 'cards'.
+            await GamePlayer.updateOne({ _id: executorId }, { $set: { [`cards.${field}`]: targetVal } });
+            await GamePlayer.updateOne({ _id: targetId }, { $set: { [`cards.${field}`]: executorVal } });
+
+            console.log(`✅ SWAP successful for field: ${field}`);
+            return { success: true };
+        } catch (error) {
+            console.error("🔥 ActionManager ERROR (handleSwap):", error);
+            return { success: false, message: "Критична помилка при обміні карт" };
+        }
     },
 
     handleSteal: async (executorId, targetId, logic) => {
-        const field = logic.attribute || logic.field;
-        const executor = await GamePlayer.findById(executorId);
-        const target = await GamePlayer.findById(targetId);
+        try {
+            const field = logic.attribute || logic.field;
+            if (!field) return { success: false, message: "Не вказано поле для викрадення" };
 
-        if (!executor || !target) return { success: false, message: "Гравець не знайдений" };
+            console.log(`🕵️ Attempting STEAL: field=${field}, thief=${executorId}, victim=${targetId}`);
 
-        executor.cards[field] = target.cards[field];
-        target.cards[field] = Array.isArray(target.cards[field]) ? [] : null;
+            const victim = await GamePlayer.findById(targetId).lean();
+            if (!victim) {
+                console.error("❌ STEAL failed: victim not found");
+                return { success: false, message: "Ціль не знайдена" };
+            }
 
-        await executor.save();
-        await target.save();
+            const stolenVal = victim.cards?.[field];
+            if (stolenVal === undefined) {
+                return { success: false, message: `У цілі відсутня карта: ${field}` };
+            }
 
-        return { success: true, executor, target };
+            // Визначаємо пусте значення залежно від типу (масив чи об'єкт)
+            const emptyVal = Array.isArray(stolenVal) ? [] : null;
+
+            await GamePlayer.updateOne({ _id: executorId }, { $set: { [`cards.${field}`]: stolenVal } });
+            await GamePlayer.updateOne({ _id: targetId }, { $set: { [`cards.${field}`]: emptyVal } });
+
+            console.log(`✅ STEAL successful: attribute '${field}' transferred`);
+            return { success: true };
+        } catch (error) {
+            console.error("🔥 ActionManager ERROR (handleSteal):", error);
+            return { success: false, message: "Критична помилка при викраденні" };
+        }
     },
 
     handleGive: async (executorId, targetId, logic) => {
-        const field = logic.attribute || logic.field;
-        const executor = await GamePlayer.findById(executorId);
-        const target = await GamePlayer.findById(targetId);
+        try {
+            const field = logic.attribute || logic.field;
+            if (!field) return { success: false, message: "Не вказано поле для передачі" };
 
-        if (!executor || !target) return { success: false, message: "Гравець не знайдений" };
+            console.log(`🎁 Attempting GIVE: field=${field}, giver=${executorId}, receiver=${targetId}`);
 
-        target.cards[field] = executor.cards[field];
-        executor.cards[field] = Array.isArray(executor.cards[field]) ? [] : null;
+            const giver = await GamePlayer.findById(executorId).lean();
+            if (!giver) {
+                console.error("❌ GIVE failed: giver not found");
+                return { success: false, message: "Вас не знайдено в базі даних" };
+            }
 
-        await executor.save();
-        await target.save();
+            const giftVal = giver.cards?.[field];
+            if (giftVal === undefined) {
+                return { success: false, message: `У вас відсутня карта: ${field}` };
+            }
 
-        return { success: true, executor, target };
+            const emptyVal = Array.isArray(giftVal) ? [] : null;
+
+            await GamePlayer.updateOne({ _id: targetId }, { $set: { [`cards.${field}`]: giftVal } });
+            await GamePlayer.updateOne({ _id: executorId }, { $set: { [`cards.${field}`]: emptyVal } });
+
+            console.log(`✅ GIVE successful: attribute '${field}' gifted`);
+            return { success: true };
+        } catch (error) {
+            console.error("🔥 ActionManager ERROR (handleGive):", error);
+            return { success: false, message: "Критична помилка при передачі" };
+        }
     },
 
     async handleDestroy(targetId, logic) {

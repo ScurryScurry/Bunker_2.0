@@ -67,29 +67,41 @@ module.exports = (io, socket) => {
 
 // 🃏 Активні карти (одноразові картки з логікою, що зберігаються в Active_cards)
 socket.on('useActiveCard', async ({ cardId, targetId }) => {
-    console.log("📩 Використання активної карти:", { cardId, targetId });
+    console.log("📩 Початок використання активної карти:", { cardId, targetId });
+
+    if (!cardId) return socket.emit('error', 'ID карти відсутній');
 
     try {
         const player = await GamePlayer.findOne({ socketId: socket.id });
         if (!player) {
+            console.error(`❌ Гравець з socketId ${socket.id} не знайдений`);
             return socket.emit('error', 'Вас не ідентифіковано');
         }
 
         // Знаходимо карту в масиві Active_cards за _id
-        const card = player.cards.Active_cards?.find(
+        const card = player.cards?.Active_cards?.find(
             c => c._id.toString() === cardId
         );
+
         if (!card) {
-            return socket.emit('error', 'Активну карту не знайдено');
+            console.warn(`⚠️ Карту ${cardId} не знайдено в руках гравця ${player.username}`);
+            return socket.emit('error', 'Активну карту не знайдено у вашому списку');
         }
 
+        if (!card.logic) {
+            return socket.emit('error', 'Ця карта не має логіки використання');
+        }
+
+        // Виконання логіки через ActionManager
         const result = await ActionManager.execute(
             player._id,
-            targetId,
+            targetId, // Може бути null для SELF, але ActionManager повинен це обробити або ми передали свій ID з фронта
             card.logic
         );
 
         if (result.success) {
+            console.log(`✅ Карта '${card.name}' успішно використана гравцем ${player.username}`);
+
             // Видаляємо використану карту з масиву ($pull за _id)
             await GamePlayer.updateOne(
                 { _id: player._id },
@@ -102,10 +114,12 @@ socket.on('useActiveCard', async ({ cardId, targetId }) => {
                 log: `${player.username} використав активну карту: ${card.name}`
             });
         } else {
+            console.warn(`🚫 Дія карти '${card.name}' не вдалася: ${result.message}`);
             socket.emit('error', result.message || 'Дія не вдалася');
         }
     } catch (err) {
-        console.error("🔥 Помилка активної карти:", err);
+        console.error("🔥 КРИТИЧНА ПОМИЛКА використання активної карти:", err);
+        socket.emit('error', 'Сталася внутрішня помилка при використанні карти');
     }
 });
 };
